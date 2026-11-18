@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The test app is the library's instrumentation APK. Loopback HTTP is clear
+     text, so the test app allows it; the extension itself does not. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application android:usesCleartextTraffic="true">
+        <activity
+            android:name="com.honsunrise.nshext.TestActivity"
+            android:exported="false" />
+    </application>
+</manifest>

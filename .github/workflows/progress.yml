@@ -1,0 +1,188 @@
+name: Native progress
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-progress-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_PROFILE_DEV_DEBUG: "0"
+  RUST_BACKTRACE: "1"
+
+jobs:
+  core:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: longbridge/nsh/.github/actions/cargo@a68a2e388bee36a4efdccbd9f53440d3bd9e933f
+        with:
+          cache: ext-core
+      - run: cargo test --locked --test progress
+      - run: cargo clippy --locked --all-targets -- -D warnings
+
+  linux:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: longbridge/nsh/.github/actions/cargo@a68a2e388bee36a4efdccbd9f53440d3bd9e933f
+        with:
+          cache: ext-linux
+          lockfiles: crates/linux/Cargo.lock
+      - run: sudo apt-get update && sudo apt-get install -y libgtk-4-dev libwebkitgtk-6.0-dev libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev xvfb dbus-x11
+      # Permit WebKit's user-namespace sandbox on this disposable Ubuntu runner.
+      - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - run: cargo clippy --manifest-path crates/linux/Cargo.toml --all-targets -- -D warnings
+      - run: xvfb-run -a dbus-run-session -- cargo run --manifest-path crates/linux/Cargo.toml --example acceptance
+
+  apple:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: longbridge/nsh/.github/actions/cargo@a68a2e388bee36a4efdccbd9f53440d3bd9e933f
+        with:
+          cache: ext-apple
+          lockfiles: crates/apple/Cargo.lock
+      - run: cargo test --manifest-path crates/apple/Cargo.toml
+      - run: cargo clippy --manifest-path crates/apple/Cargo.toml --all-targets -- -D warnings
+      - run: cargo run --manifest-path crates/apple/Cargo.toml --example acceptance
+
+  ios:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: longbridge/nsh/.github/actions/cargo@a68a2e388bee36a4efdccbd9f53440d3bd9e933f
+        with:
+          cache: ext-ios
+          lockfiles: crates/apple/Cargo.lock
+      - name: Select the available iPhone simulator
+        shell: bash
+        run: |
+          if [[ "$(uname -m)" == arm64 ]]; then
+            rustup target add aarch64-apple-ios-sim
+          else
+            rustup target add x86_64-apple-ios
+          fi
+          python3 - <<'PY'
+          import json, os, subprocess
+          data = json.loads(subprocess.check_output(["xcrun", "simctl", "list", "devices", "available", "--json"]))
+          devices = [d for runtime, values in data["devices"].items() if "iOS" in runtime for d in values if "iPhone" in d["name"]]
+          if not devices:
+              raise SystemExit("No iPhone simulator is installed")
+          with open(os.environ["GITHUB_ENV"], "a") as output:
+              output.write("SIMULATOR=" + devices[0]["udid"] + "\n")
+          PY
+      - run: crates/apple/examples/run-ios-simulator.sh acceptance
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ios-acceptance
+          path: crates/apple/target/ios-simulator/acceptance.log
+
+  windows:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: windows-latest
+    env:
+      RUST_MIN_STACK: "268435456"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: longbridge/nsh/.github/actions/cargo@a68a2e388bee36a4efdccbd9f53440d3bd9e933f
+        with:
+          cache: ext-windows
+          lockfiles: crates/windows/Cargo.lock
+      - run: cargo clippy --manifest-path crates/windows/Cargo.toml --all-targets -- -D warnings
+      - run: cargo run --manifest-path crates/windows/Cargo.toml --example acceptance
+
+  gpui:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, macos-15, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      RUST_MIN_STACK: "268435456"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: longbridge/nsh/.github/actions/cargo@a68a2e388bee36a4efdccbd9f53440d3bd9e933f
+        with:
+          cache: ext-gpui-${{ matrix.os }}
+          lockfiles: crates/gpui/Cargo.lock
+      - name: Linux native dependencies
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libxkbcommon-dev libxkbcommon-x11-dev libfontconfig-dev libvulkan-dev libasound2-dev libudev-dev libxcb1-dev libx11-xcb-dev libxcb-shape0-dev libxcb-xfixes0-dev xvfb dbus-x11
+      - name: Compile and check the GPUI adapter
+        run: cargo clippy --manifest-path crates/gpui/Cargo.toml --features runtime-shaders --all-targets -- -D warnings
+      - name: Linux native acceptance
+        if: runner.os == 'Linux'
+        env:
+          WEBKIT_DISABLE_DMABUF_RENDERER: "1"
+        run: dbus-run-session -- xvfb-run -a cargo run --manifest-path crates/gpui/Cargo.toml --features runtime-shaders --example acceptance
+      - name: macOS and Windows native acceptance
+        if: runner.os != 'Linux'
+        run: cargo run --manifest-path crates/gpui/Cargo.toml --features runtime-shaders --example acceptance
+
+  android:
+    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.6"
+      - name: Fetch released, unmodified NSH 0.6.0
+        shell: bash
+        run: |
+          mkdir -p .nsh/sdk
+          cd .nsh/sdk
+          base=https://github.com/longbridge/nsh/releases/download/v0.6.0
+          curl -fLsS -O "$base/nsh-embed-android.zip"
+          curl -fLsS -O "$base/nsh-embed-android.zip.sha256"
+          curl -fLsS -O "$base/nsh-linux-x86_64.tar.gz"
+          curl -fLsS -O "$base/nsh-linux-x86_64.tar.gz.sha256"
+          sha256sum -c nsh-embed-android.zip.sha256
+          sha256sum -c nsh-linux-x86_64.tar.gz.sha256
+          unzip -q nsh-embed-android.zip
+          tar -xzf nsh-linux-x86_64.tar.gz nsh/bin/nsh
+      - name: Build the real fixture and example bundles
+        run: |
+          .nsh/sdk/nsh/bin/nsh build android/fixture --release --out android/webview/src/androidTest/assets/nsh-ext-fixture
+          .nsh/sdk/nsh/bin/nsh build android/example --release --out android/example/src/main/assets/nsh
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: gradle --no-daemon --console=plain -p android :webview:connectedDebugAndroidTest -PnshAar=$PWD/.nsh/sdk/nsh-embed-android/nsh.aar
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: android-acceptance
+          path: android/webview/build/reports/androidTests/

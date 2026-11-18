@@ -1,0 +1,46 @@
+[package]
+name = "nsh-ext-windows"
+version = "0.6.0"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+description = "Windows WebView2 adapter for nsh-ext, hosted as an NSH native component"
+repository = "https://github.com/honsunrise/nsh-ext"
+readme = "README.md"
+include = ["src/**", "examples/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
+autoexamples = false
+
+[dependencies]
+nsh-ext = { version = "0.6.0", path = "../.." }
+log = "0.4"
+serde_json = "1"
+
+[target.'cfg(windows)'.dependencies]
+nsh-platform-windows = { version = "=0.6.0", default-features = false }
+webview2-com = "0.39"
+windows = { version = "0.62", features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Direct2D",
+    "Win32_Graphics_Direct2D_Common",
+    "Win32_Graphics_Gdi",
+    "Win32_System_Com",
+    "Win32_System_LibraryLoader",
+    "Win32_System_Ole",
+    "Win32_System_Threading",
+    "Win32_UI_HiDpi",
+    "Win32_UI_WindowsAndMessaging",
+] }
+
+[dev-dependencies]
+nsh-core = { version = "=0.6.0", default-features = false }
+
+[[example]]
+name = "progress"
+path = "examples/progress.rs"
+
+[[example]]
+name = "acceptance"
+path = "examples/acceptance.rs"
+
+[lints.rust]
+missing_docs = "warn"

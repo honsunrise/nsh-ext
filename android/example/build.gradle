@@ -1,0 +1,37 @@
+// The example app: an NSH view that registers the extension and runs App.tsx.
+// It needs the same host-supplied runtime as the library (see ../README.md).
+plugins {
+    id 'com.android.application'
+}
+
+def nshAar = file(findProperty('nshAar') ?: "${rootDir}/libs/nsh.aar")
+if (!nshAar.isFile()) {
+    throw new GradleException(
+        "nsh-ext: the unmodified Native Shell 0.6.0 Android library is missing at ${nshAar}. " +
+        "Use nsh.aar from the v0.6.0 release asset nsh-embed-android.zip " +
+        "(nsh-embed-android/nsh.aar), put it there, or pass -PnshAar=/absolute/path/to/nsh.aar.")
+}
+
+android {
+    namespace 'com.honsunrise.nshext.example'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId 'com.honsunrise.nshext.example'
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName '1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation project(':webview')
+    // The host app packages the unmodified runtime; the library only compiles against it.
+    implementation files(nshAar)
+}

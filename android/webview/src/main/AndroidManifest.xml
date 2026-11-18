@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The extension's own browser loads web content, so the app needs INTERNET.
+     The Native Shell AAR declares it too; declaring it here keeps the
+     requirement true of this library on its own. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

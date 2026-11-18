@@ -1,0 +1,24 @@
+[package]
+name = "nsh-ext"
+version = "0.6.0"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+description = "Opt-in native WebView extensions for Native Shell"
+repository = "https://github.com/honsunrise/nsh-ext"
+readme = "README.md"
+include = ["src/**", "tests/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
+
+[dependencies]
+nsh-core = { version = "=0.6.0", default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+log = "0.4"
+
+[lints.rust]
+missing_docs = "warn"
+unsafe_code = "forbid"
+
+[[test]]
+name = "progress"
+path = "tests/progress/main.rs"
