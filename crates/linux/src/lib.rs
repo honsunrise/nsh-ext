@@ -18,6 +18,7 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use gtk::glib;
+use nsh_core::element::{Registry, native_components, native_module};
 use nsh_core::{JsonValue, geometry::Percentage};
 use nsh_ext::{COMPONENT_NAME, LoadProgress, PROGRESS_EVENT, ProgressTracker};
 use nsh_platform_linux::{ComponentContext, Components, NativeComponent, gtk4 as gtk};
@@ -31,6 +32,19 @@ pub fn register(components: &Components) {
         COMPONENT_NAME,
         Rc::new(|context| Box::new(Component::new(context))),
     );
+}
+
+/// The adapter's TSX UI set: it adds no elements of its own, because the
+/// typed `WebView` element belongs to [`nsh_ext`], which an app lists beside
+/// this crate. NSH requires a set for every crate `nsh.json` names.
+#[native_module("nsh-ext-linux")]
+fn native(_registry: &mut Registry) {}
+
+/// Registers the adapter on an NSH Linux host: `nsh run`, `nsh test
+/// --target linux` and packaged apps call this for every view.
+#[native_components(linux)]
+fn components(components: &Components) {
+    register(components);
 }
 
 struct Component {

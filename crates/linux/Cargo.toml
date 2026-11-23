@@ -16,7 +16,7 @@ include = ["src/**", "examples/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
 # macOS or Windows build.
 [workspace]
 
-[dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 nsh-ext = { version = "0.6.0", path = "../.." }
 nsh-core = { version = "=0.6.0", default-features = false }
 nsh-platform-linux = { version = "=0.6.0", default-features = false }
