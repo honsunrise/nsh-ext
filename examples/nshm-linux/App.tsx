@@ -1,10 +1,9 @@
 // The nsh-ext WebView on a real NSH Linux (GTK 4 / WebKitGTK 6) host.
 //
-// `WebView` is `nsh-ext`'s typed element; `nsh-ext-linux` (this repository's
-// `crates/linux`) is listed beside it in `nsh.json` "rust" because that is
-// where the native component is registered. The app itself knows nothing
-// about GTK or WebKit: it sets `src`, listens to `onLoadProgress` and shows
-// what the engine reported.
+// `WebView` is `nsh-ext`'s typed element. The app installs `nsh-ext` and
+// `nsh-ext-linux` through `nsh.json` dependencies; NSH registers the Linux
+// native view. The app knows nothing about GTK or WebKit: it sets `src`
+// and displays `onLoadProgress` events.
 //
 // The buttons drive the states `lifecycle.test.tsx` checks. The fixture
 // server (`acceptance.py`) passes its ephemeral addresses in these
@@ -99,6 +98,7 @@ function App() {
       <View style={{ flex: 1, borderRadius: 8, overflow: "hidden", backgroundColor: "#ffffff" }}>
         {mounted() ? (
           <WebView
+            style={{ flex: 1 }}
             src={src()}
             trackProgress={tracked()}
             onLoadProgress={(event) => record(event)}
@@ -107,7 +107,8 @@ function App() {
           <Text style={{ fontSize: 13, color: "#57606a", padding: 12 }}>unmounted</Text>
         )}
       </View>
-      <Each of={events()}>
+      {/* Keep a visible browser viewport as the native progress log grows. */}
+      <Each of={events().slice(-6)}>
         {(event) => <Text style={{ fontSize: 11, color: "#24292f" }}>{line(event())}</Text>}
       </Each>
     </View>

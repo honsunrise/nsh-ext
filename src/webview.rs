@@ -40,15 +40,17 @@ pub(crate) enum WebViewEvent {
 /// `src` is live: changing it navigates the existing view. `trackProgress`
 /// opts into native load events; `onLoadProgress` receives each decoded
 /// event, with an unknown estimate and an absent diagnostic kept as `null`.
-/// The Rust [`web_view`](crate::web_view) remains the native element without
-/// a typed event surface.
+/// The Rust [`web_view`](crate::web_view) keeps its existing builder and
+/// typed [`LoadProgress`] callback.
 #[component]
 pub(crate) fn WebView(props: WebViewProps, cx: Scope<WebViewEvent>) -> impl IntoElement {
     let src = props.src;
     let track_progress = props.track_progress;
     native(COMPONENT_NAME)
         .prop("src", move || JsonValue::String(src.get()))
-        .prop("trackProgress", move || JsonValue::Bool(track_progress.get()))
+        .prop("trackProgress", move || {
+            JsonValue::Bool(track_progress.get())
+        })
         .on_native_event(move |event: &NativeEvent| {
             if event.name.as_ref() == PROGRESS_EVENT {
                 match LoadProgress::from_value(&event.data) {

@@ -87,9 +87,44 @@ The public native-component transport uses:
 - `trackProgress`: boolean, default `false`;
 - native event: `loadProgress`, with the event object described above.
 
-The Rust `.on_load_progress(...)` builder enables `trackProgress` automatically. A TSX application using `nativeComponent` declares the same props/event and enables tracking when it listens. The host supplies the native implementation; dynamically delivered TSX cannot install a Rust or Java extension itself.
+The Rust `.on_load_progress(...)` builder enables `trackProgress` automatically. The experimental TSX `WebView` export accepts `src`, explicit `trackProgress` and `onLoadProgress`. The lower-level `nativeComponent` transport remains available to embedding hosts. The host supplies the native implementation; dynamically delivered TSX cannot install a Rust or Java extension itself.
 
 Native components are **trusted host code**. NSH's built-in WebView URL grants and storage policy are not automatically applied to an application-registered component. Hosts must authorize URLs and registration when embedding untrusted modules. Platform website-data behavior belongs to the adapter/host; the common loading API makes no cross-platform Cookie-store or incognito guarantee.
+
+### Linux nshm experiment
+
+This branch exports the typed `WebView` component from the Rust nshm `nsh-ext`.
+The local `nsh-ext-linux` adapter supplies the Linux native-registration hook.
+Install both local modules with the nshm-enabled CLI:
+
+```sh
+nsh add --path /path/to/nsh-ext
+nsh add --path /path/to/nsh-ext/crates/linux
+```
+
+```tsx
+import { WebView } from "nsh-ext";
+
+<WebView
+  src="https://example.com"
+  trackProgress
+  onLoadProgress={({ state, progress }) => console.log(state, progress)}
+  class="flex-1"
+/>;
+```
+
+The experiment pins Native Shell source to
+`5f66febdcc70230949250615b0ad0529462da1de`; use the CLI built from that checkout,
+not a released CLI with the same version string. This is a local branch
+experiment, not an update to the published `0.6.0` packages.
+At this revision, Cargo-module discovery scans an app's own `"rust"` crates,
+not the Cargo dependencies of installed nshm. The example therefore lists both
+modules under `"dependencies"`; installing only the Linux adapter leaves
+`"nsh-ext"` unavailable to TSX. No custom host or `"rust"` entry is used.
+See [the Linux TSX example](examples/nshm-linux/) for the reproducible native
+acceptance command. The existing Rust registration APIs remain available on
+every adapter. Only Linux automatic registration is exercised here; Android,
+Apple, Windows and GPUI keep their existing embedding paths.
 
 ## Development
 

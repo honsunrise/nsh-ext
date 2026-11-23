@@ -5,8 +5,8 @@ The script owns the fixture and the resources around it:
 
 * a local HTTP server on an ephemeral 127.0.0.1 port (never a fixed port)
   serves a fast page and a slowly streamed page;
-* a second ephemeral address is allocated and closed, so a connection to it
-  is a genuine native connection refusal rather than an HTTP error status;
+* a second ephemeral socket is bound without listening, reserving an address
+  that refuses connections instead of returning an HTTP error status;
 * the pinned ``nsh`` binary is started in the example directory with
   ``nsh test . --target linux``, receiving both addresses through the
   app's granted environment variables;
@@ -54,7 +54,7 @@ SLOW_HEAD = (
 <html><head><meta charset="utf-8"><title>slow</title></head>
 <body><h1>slow page</h1>"""
 )
-SLOW_CHUNK = b"<!-- slow fixture padding -->" + b"x" * (32 * 1024 - 31) + b"\n"
+SLOW_CHUNK = b"<!--" + b"x" * (32 * 1024 - 8) + b"-->\n"
 SLOW_CHUNKS = 64
 SLOW_DELAY = 0.03
 SLOW_BODY = SLOW_HEAD + SLOW_CHUNK * SLOW_CHUNKS + b"</body></html>"
@@ -117,11 +117,15 @@ def ephemeral_server() -> tuple[http.server.ThreadingHTTPServer, int]:
     return server, server.server_address[1]
 
 
-def refused_port() -> int:
-    """A just-freed loopback port: connecting to it is refused by the kernel."""
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+def refused_socket() -> socket.socket:
+    """Reserve a loopback port without listening, so no other process can take it."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    try:
         sock.bind(("127.0.0.1", 0))
-        return sock.getsockname()[1]
+        return sock
+    except OSError:
+        sock.close()
+        raise
 
 
 def resolve_nsh(given: str) -> Path:
@@ -147,9 +151,11 @@ def run(nsh: Path, filter: str | None, trace: bool, timeout: float) -> int:
 
     server, port = ephemeral_server()
     child: subprocess.Popen[bytes] | None = None
+    refusal: socket.socket | None = None
     try:
         base = f"http://127.0.0.1:{port}/"
-        refused = f"http://127.0.0.1:{refused_port()}/"
+        refusal = refused_socket()
+        refused = f"http://127.0.0.1:{refusal.getsockname()[1]}/"
         env = os.environ.copy()
         env["NSH_EXT_FIXTURE_BASE"] = base
         env["NSH_EXT_FIXTURE_REFUSED"] = refused
@@ -199,6 +205,8 @@ def run(nsh: Path, filter: str | None, trace: bool, timeout: float) -> int:
     finally:
         if child is not None and child.poll() is None:
             _stop(child)
+        if refusal is not None:
+            refusal.close()
         server.shutdown()
         server.server_close()
 

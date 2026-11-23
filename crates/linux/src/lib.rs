@@ -34,9 +34,8 @@ pub fn register(components: &Components) {
     );
 }
 
-/// The adapter's TSX UI set: it adds no elements of its own, because the
-/// typed `WebView` element belongs to [`nsh_ext`], which an app lists beside
-/// this crate. NSH requires a set for every crate `nsh.json` names.
+/// The adapter's UI set names it as an nshm. The typed `WebView` belongs
+/// to [`nsh_ext`], which the app installs alongside this adapter.
 #[native_module("nsh-ext-linux")]
 fn native(_registry: &mut Registry) {}
 
