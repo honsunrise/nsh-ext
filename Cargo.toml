@@ -6,6 +6,7 @@ rust-version = "1.97"
 license = "Apache-2.0"
 description = "Opt-in native WebView extensions for Native Shell"
 repository = "https://github.com/honsunrise/nsh-ext"
+keywords = ["nsh", "nshm", "webview"]
 readme = "README.md"
 include = ["src/**", "tests/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
 
