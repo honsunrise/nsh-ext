@@ -1,4 +1,4 @@
-# The host supplies the unmodified released Native Shell 0.6.0 runtime here.
+# The host supplies the unmodified released Native Shell 0.7.0 runtime here.
 /libs/*.aar
 
 # Compiled app bundles (build them with `nsh build`).

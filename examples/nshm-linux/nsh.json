@@ -1,0 +1,20 @@
+{
+  "name": "nsh-ext WebView on Linux",
+  "id": "com.honsunrise.nshext.linux",
+  "dependencies": {
+    "nsh-ext-linux": {
+      "path": "../../crates/linux"
+    },
+    "nsh-ext": {
+      "path": "../.."
+    }
+  },
+  "capabilities": {
+    "process": {
+      "env": [
+        "NSH_EXT_FIXTURE_BASE",
+        "NSH_EXT_FIXTURE_REFUSED"
+      ]
+    }
+  }
+}

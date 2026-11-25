@@ -1,5 +1,5 @@
 // Build with Gradle 8.9+ and JDK 17. The Native Shell runtime is not downloaded:
-// the host passes the unmodified released 0.6.0 `nsh.aar` (see README.md).
+// the host passes the unmodified released 0.7.0 `nsh.aar` (see README.md).
 plugins {
     id 'com.android.application' version '8.7.3' apply false
     id 'com.android.library' version '8.7.3' apply false

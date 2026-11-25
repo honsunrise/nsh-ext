@@ -13,7 +13,7 @@ decides which sources it passes.
 
 - Windows 10/11 with the WebView2 Evergreen Runtime installed.
 - Rust 1.97 or later, edition 2024.
-- NSH `nsh-platform-windows` `=0.6.0` (a published release, not a fork);
+- NSH `nsh-platform-windows` `=0.7.0` (a published release, not a fork);
   the application, its host and this adapter share that NSH version.
 - `webview2-com-sys` links `WebView2LoaderStatic` on MSVC; GNU targets
   need `WebView2Loader.dll` beside the executable.
@@ -23,6 +23,9 @@ This package has its own `Cargo.toml`/lock graph, separate from the root
 root crate or the other adapters.
 
 ## Use
+
+[Install both nshm](../../README.md#install-as-an-nshm) for automatic registration
+in an NSH-generated Windows host. To register directly in an embedding host:
 
 ```rust
 use nsh_platform_windows::{AppOptions, AppSource, Root, run_app};
@@ -168,8 +171,8 @@ cargo run --manifest-path crates/windows/Cargo.toml --example acceptance
   with a reactive source, a progress status line, source switches and a
   Clear action.
 - `examples/acceptance.rs` is the actual NSH acceptance: it registers the
-  adapter on `AppOptions::components`, runs `run_app` with a Rust `Root`,
-  and builds the page with `nsh_ext::web_view().on_load_progress(...)`.
+  adapter on `AppOptions::components`, opens an explicit NSH desktop window,
+  and fills it with `nsh_ext::web_view().on_load_progress(...)`.
   It starts with an empty source, so clearing before anything loaded must
   emit nothing and make no page. A local HTTP server provides a successful
   page, a 404 page, a slow page, a marker page whose timer, worker and open
@@ -193,7 +196,8 @@ cargo run --manifest-path crates/windows/Cargo.toml --example acceptance
   same unit relation is checked exactly. Every event comes from WebView2's
   native callbacks; `loading` fractions, a numeric estimate on
   `started`/`failed`, and zero used for unknown all fail the acceptance.
-  Exit code 0 passes, 1 fails, 2 times out.
+  The harness waits for the window to close before checking its verdict:
+  exit code 0 passes, 1 fails, 2 times out.
 
 Both require the WebView2 runtime. Run them on Windows with
 `cd crates/windows`; the acceptance harness exits nonzero on any contract
@@ -214,7 +218,7 @@ assertion failure.
 
 The WebView2 environment/controller setup was adapted from
 `nsh-platform-windows` 0.5.1 (Apache-2.0, Longbridge), the release it was
-written against; the adapter targets the published 0.6.0 API, whose public
+written against; the adapter targets the published 0.7.0 API, whose public
 `NativeComponent` contract is used here. The extension-owned host,
 navigation correlation and progress mapping are its own.
 

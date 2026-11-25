@@ -21,7 +21,9 @@ use std::{
 
 use nsh_core::prelude::*;
 use nsh_ext::{LoadProgress, LoadState};
-use nsh_platform_gpui::{AppOptions, AppSource, Root, run_app};
+use nsh_platform_gpui::{Root, gpui};
+
+mod support;
 
 /// What the demo's loopback server streams: large enough, and written slowly
 /// enough, that the engine reports intermediate progress.
@@ -133,14 +135,13 @@ impl Component for Demo {
     }
 }
 
-fn main() -> std::process::ExitCode {
+fn main() {
     env_logger::init();
     let root = Root::of::<Demo>().app_id("dev.nsh.ext.gpui.progress");
-    let options = nsh_ext_gpui::install(AppOptions {
-        title: "nsh-ext · GPUI web view".to_owned(),
-        app_id: "dev.nsh.ext.gpui.progress".to_owned(),
-        size: (1000, 700),
-        ..Default::default()
-    });
-    run_app(AppSource::Rust(root), options)
+    support::run(
+        root,
+        "nsh-ext · GPUI web view",
+        gpui::size(gpui::px(1000.0), gpui::px(700.0)),
+        false,
+    );
 }

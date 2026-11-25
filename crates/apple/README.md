@@ -17,11 +17,15 @@ member of the root crate's workspace. It is built only for Apple targets:
 
 The NSH platform dependencies use `default-features = false`: this is a
 Rust-only adapter, so NSH's default JS/editor/shader feature sets are not
-pulled in. They are pinned to the released NSH **0.6.0** (`nsh-platform-ios`
-/ `nsh-platform-macos` `=0.6.0`): keep the application, its host and this
+pulled in. They are pinned to the released NSH **0.7.0** (`nsh-platform-ios`
+/ `nsh-platform-macos` `=0.7.0`): keep the application, its host and this
 adapter on the same NSH version.
 
 ## Register it
+
+For an NSH-generated host, [install both nshm](../../README.md#install-as-an-nshm)
+with the `crates/apple` adapter. The generated host registers it on iOS,
+Mac Catalyst, and macOS. Embedding hosts can register it directly.
 
 Register the component before the app loads. With an `AppView` the host owns:
 

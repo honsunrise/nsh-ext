@@ -31,19 +31,33 @@
 //! application decides which sources it passes and whether untrusted
 //! modules may use it.
 
-#![cfg(windows)]
+use nsh_core::element::{Registry, native_components, native_module};
 
+#[native_module("nsh-ext-windows")]
+fn native(_registry: &mut Registry) {}
+
+#[native_components(windows)]
+fn components(components: &Components) {
+    register(components);
+}
+
+#[cfg(windows)]
 mod environment;
+#[cfg(windows)]
 mod host;
 
+#[cfg(windows)]
 use std::rc::Rc;
 
+#[cfg(windows)]
 use nsh_ext::{COMPONENT_NAME, PROGRESS_EVENT};
+#[cfg(windows)]
 use nsh_platform_windows::{
     ComponentContext, ComponentFactory, Components, NativeComponent,
     windows::Win32::Foundation::HWND,
 };
 
+#[cfg(windows)]
 use crate::host::WebViewHost;
 
 /// Registers the extension's WebView with `components`.
@@ -51,12 +65,14 @@ use crate::host::WebViewHost;
 /// Call it before loading an app, on the UI thread. It never replaces an
 /// NSH built-in: the registration goes on the app's own component registry
 /// under [`nsh_ext::COMPONENT_NAME`].
+#[cfg(windows)]
 pub fn register(components: &Components) {
     components.register(COMPONENT_NAME, component_factory());
 }
 
 /// The factory for the extension's native component, for
 /// [`AppView::register_component`](nsh_platform_windows::AppView::register_component).
+#[cfg(windows)]
 pub fn component_factory() -> ComponentFactory {
     Rc::new(|context: ComponentContext| -> Box<dyn NativeComponent> {
         Box::new(WebViewComponent::new(context))
@@ -67,10 +83,12 @@ pub fn component_factory() -> ComponentFactory {
 ///
 /// Private to the adapter: apps create it through [`nsh_ext::web_view`] and
 /// [`register`].
+#[cfg(windows)]
 struct WebViewComponent {
     host: WebViewHost,
 }
 
+#[cfg(windows)]
 impl WebViewComponent {
     /// Makes a component for `context`, in a new hidden child window that
     /// NSH parents and places.
@@ -86,6 +104,7 @@ impl WebViewComponent {
     }
 }
 
+#[cfg(windows)]
 impl NativeComponent for WebViewComponent {
     fn window(&self) -> Option<HWND> {
         let window = self.host.window();

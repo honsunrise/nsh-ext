@@ -13,6 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A loopback HTTP server for the instrumentation tests: a page that completes, a
@@ -21,6 +23,7 @@ import java.util.List;
 final class LocalServer implements Closeable {
     private final ServerSocket listener;
     private final List<Socket> accepted = Collections.synchronizedList(new ArrayList<>());
+    private final CountDownLatch slowResponse = new CountDownLatch(1);
 
     LocalServer() throws IOException {
         listener = new ServerSocket();
@@ -36,6 +39,10 @@ final class LocalServer implements Closeable {
 
     String url(String path) {
         return "http://127.0.0.1:" + port() + path;
+    }
+
+    boolean awaitSlowResponse(long timeoutMs) throws InterruptedException {
+        return slowResponse.await(timeoutMs, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -65,19 +72,31 @@ final class LocalServer implements Closeable {
             } catch (IOException stopped) {
                 return;
             }
-            accepted.add(client);
-            try {
-                handle(client);
-            } catch (IOException ignored) {
-                // A WebView that aborts a load closes its socket.
-            } finally {
-                accepted.remove(client);
-                try {
-                    client.close();
-                } catch (IOException ignored) {
-                    // Already closed.
+            synchronized (accepted) {
+                if (listener.isClosed()) {
+                    try {
+                        client.close();
+                    } catch (IOException ignored) {
+                        // Already closed.
+                    }
+                    return;
                 }
+                accepted.add(client);
             }
+            // The replacement must not wait for the retired browser's socket.
+            Thread worker = new Thread(() -> serveClient(client), "nsh-ext-test-request");
+            worker.setDaemon(true);
+            worker.start();
+        }
+    }
+
+    private void serveClient(Socket client) {
+        try (Socket socket = client) {
+            handle(socket);
+        } catch (IOException ignored) {
+            // A WebView that aborts a load can close its socket.
+        } finally {
+            accepted.remove(client);
         }
     }
 
@@ -124,6 +143,7 @@ final class LocalServer implements Closeable {
                     + "Connection: close\r\n\r\n";
             out.write(head.getBytes(StandardCharsets.US_ASCII));
             out.flush();
+            slowResponse.countDown();
             // Headers only: the document never completes. Reading blocks until the
             // WebView aborts the load (or close() closes this socket).
             while (in.read() != -1) {
