@@ -7,7 +7,7 @@ The component registers as `nsh-ext.webview` and creates its own
 `WebKitWebView`. It never replaces NSH's built-in WebView, its network session
 or its signal handlers, and it needs no NSH source changes; it is built only on
 `nsh-platform-linux`'s public native-component API (`NativeComponent`,
-`Components`, `ComponentContext`) from NSH 0.6.0. It links WebKitGTK itself,
+`Components`, `ComponentContext`) from NSH 0.7.0. It links WebKitGTK itself,
 so NSH does not need its `webview` feature, and its built-in WebView can
 coexist with this one.
 
@@ -17,7 +17,7 @@ coexist with this one.
 - GTK 4 and WebKitGTK 6.0 at build and run time: for example
   `libwebkitgtk-6.0-dev` (Debian/Ubuntu), `webkitgtk6.0-devel` (Fedora), or
   `webkitgtk-6.0` (Arch). The adapter needs the GTK main thread and a display.
-- An NSH app on Linux, with `nsh-platform-linux` 0.6.0.
+- An NSH app on Linux, with `nsh-platform-linux` 0.7.0.
 - Hosts enabling `nsh-platform-linux/sound` also need GStreamer core/base
   development packages (`libgstreamer1.0-dev` and
   `libgstreamer-plugins-base1.0-dev` on Debian/Ubuntu).
@@ -26,6 +26,9 @@ This package is its own Cargo package and lock graph, so the Linux GTK 4 /
 WebKitGTK 6.0 stack never enters a macOS, Windows, Android or iOS build.
 
 ## Register
+
+[Install both nshm](../../README.md#install-as-an-nshm) for automatic registration
+in an NSH-generated Linux host. Embedding hosts can register it directly.
 
 Register the adapter before the app's elements are created. From Rust:
 

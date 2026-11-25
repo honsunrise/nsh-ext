@@ -1,12 +1,13 @@
 [package]
 name = "nsh-ext-apple"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
 description = "iOS, Mac Catalyst and macOS adapter for nsh-ext's loading-progress WebView"
 repository = "https://github.com/honsunrise/nsh-ext"
 readme = "README.md"
+keywords = ["nsh", "nshm", "webview"]
 include = ["src/**", "examples/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
 
 [lib]
@@ -14,8 +15,8 @@ name = "nsh_ext_apple"
 path = "src/lib.rs"
 
 [dependencies]
-nsh-ext = { version = "0.6.0", path = "../.." }
-nsh-core = { version = "=0.6.0", default-features = false }
+nsh-ext = { version = "=0.7.0", path = "../.." }
+nsh-core = { version = "=0.7.0", default-features = false }
 log = "0.4"
 
 [target.'cfg(any(target_os = "ios", target_os = "macos"))'.dependencies]
@@ -34,7 +35,7 @@ objc2-foundation = { version = "=0.3.2", default-features = false, features = [
 ] }
 
 [target.'cfg(target_os = "ios")'.dependencies]
-nsh-platform-ios = { version = "=0.6.0", default-features = false }
+nsh-platform-ios = { version = "=0.7.0", default-features = false }
 objc2-ui-kit = { version = "=0.3.2", default-features = false, features = [
     "std",
     "UIResponder",
@@ -42,7 +43,7 @@ objc2-ui-kit = { version = "=0.3.2", default-features = false, features = [
 ] }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-nsh-platform-macos = { version = "=0.6.0", default-features = false }
+nsh-platform-macos = { version = "=0.7.0", default-features = false }
 objc2-app-kit = { version = "=0.3.2", default-features = false, features = [
     "std",
     "NSResponder",

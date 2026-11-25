@@ -29,9 +29,8 @@
 //! window's DPI, so the page's CSS viewport is the window's client area
 //! divided by the window's scale at any DPI (2x included).
 //!
-//! Portions of the WebView2 setup were adapted from `nsh-platform-windows`
-//! 0.5.1 (Apache-2.0, Longbridge), the release this host was written against,
-//! and are kept against the 0.6.0 contract it now targets.
+//! Portions of the WebView2 setup come from `nsh-platform-windows` 0.5.1
+//! (Apache-2.0, Longbridge); the adapter targets the 0.7.0 contract.
 
 use std::{
     cell::{Cell, RefCell},

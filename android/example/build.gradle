@@ -7,8 +7,8 @@ plugins {
 def nshAar = file(findProperty('nshAar') ?: "${rootDir}/libs/nsh.aar")
 if (!nshAar.isFile()) {
     throw new GradleException(
-        "nsh-ext: the unmodified Native Shell 0.6.0 Android library is missing at ${nshAar}. " +
-        "Use nsh.aar from the v0.6.0 release asset nsh-embed-android.zip " +
+        "nsh-ext: the unmodified Native Shell 0.7.0 Android library is missing at ${nshAar}. " +
+        "Use nsh.aar from the v0.7.0 release asset nsh-embed-android.zip " +
         "(nsh-embed-android/nsh.aar), put it there, or pass -PnshAar=/absolute/path/to/nsh.aar.")
 }
 

@@ -1,13 +1,13 @@
 [package]
 name = "nsh-ext-linux"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
 description = "Linux (GTK 4, WebKitGTK 6.0) adapter for nsh-ext's extension-owned WebView"
 repository = "https://github.com/honsunrise/nsh-ext"
 readme = "README.md"
-keywords = ["nsh", "webview", "gtk", "webkitgtk"]
+keywords = ["nsh", "nshm", "webview", "gtk", "webkitgtk"]
 categories = ["gui"]
 include = ["src/**", "examples/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
 
@@ -16,10 +16,12 @@ include = ["src/**", "examples/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
 # macOS or Windows build.
 [workspace]
 
+[dependencies]
+nsh-core = { version = "=0.7.0", default-features = false }
+
 [target.'cfg(target_os = "linux")'.dependencies]
-nsh-ext = { version = "0.6.0", path = "../.." }
-nsh-core = { version = "=0.6.0", default-features = false }
-nsh-platform-linux = { version = "=0.6.0", default-features = false }
+nsh-ext = { version = "=0.7.0", path = "../.." }
+nsh-platform-linux = { version = "=0.7.0", default-features = false }
 webkit6 = "0.6"
 
 [lints.rust]

@@ -6,13 +6,12 @@ Opt-in native WebView extensions for [Native Shell](https://nsh.dev), maintained
 
 `nsh-ext` contains the common Rust element and loading-event contract. Host adapters live in separate packages so applications choose their native dependencies. In particular, native Linux uses GTK 4 / WebKitGTK 6, while GPUI on Linux uses GTK 3 / WebKitGTK 4.1; these are separate dependency graphs, not an enable-everything feature.
 
-Package versions start at **0.6.0**, matching the released NSH **0.6.0** API. Keep the application,
-its host and its adapter on the same NSH version. Register the platform adapter
-before the application starts loading its elements.
+The extension and its adapters target Native Shell **0.7.0**. Keep the app,
+host, and matching extension adapter on the same NSH version.
 
 | Extension version | Native Shell | GPUI Fast baseline |
 | --- | --- | --- |
-| 0.6.0 | 0.6.0 | 0.1.16 |
+| 0.7.0 | 0.7.0 | 0.1.19 |
 
 The extension version follows the Native Shell version it targets. The shared
 Rust event, element and registration types belong to that NSH dependency graph.
@@ -87,15 +86,14 @@ The public native-component transport uses:
 - `trackProgress`: boolean, default `false`;
 - native event: `loadProgress`, with the event object described above.
 
-The Rust `.on_load_progress(...)` builder enables `trackProgress` automatically. The experimental TSX `WebView` export accepts `src`, explicit `trackProgress` and `onLoadProgress`. The lower-level `nativeComponent` transport remains available to embedding hosts. The host supplies the native implementation; dynamically delivered TSX cannot install a Rust or Java extension itself.
+The Rust `.on_load_progress(...)` builder enables `trackProgress` automatically. The TSX `WebView` exported by `nsh-ext` accepts `src`, explicit `trackProgress`, and `onLoadProgress`. Hosts that embed the native component without the Rust module can use the lower-level `nativeComponent` transport. Dynamically delivered TSX uses the code its host has already linked and registered.
 
 Native components are **trusted host code**. NSH's built-in WebView URL grants and storage policy are not automatically applied to an application-registered component. Hosts must authorize URLs and registration when embedding untrusted modules. Platform website-data behavior belongs to the adapter/host; the common loading API makes no cross-platform Cookie-store or incognito guarantee.
 
-### Linux nshm experiment
+### Install as an nshm
 
-This branch exports the typed `WebView` component from the Rust nshm `nsh-ext`.
-The local `nsh-ext-linux` adapter supplies the Linux native-registration hook.
-Install both local modules with the nshm-enabled CLI:
+Use the released NSH 0.7.0 CLI. In the app directory, add the shared module and
+its platform adapter. For Linux, using a local checkout:
 
 ```sh
 nsh add --path /path/to/nsh-ext
@@ -113,18 +111,19 @@ import { WebView } from "nsh-ext";
 />;
 ```
 
-The experiment pins Native Shell source to
-`5f66febdcc70230949250615b0ad0529462da1de`; use the CLI built from that checkout,
-not a released CLI with the same version string. This is a local branch
-experiment, not an update to the published `0.6.0` packages.
-At this revision, Cargo-module discovery scans an app's own `"rust"` crates,
-not the Cargo dependencies of installed nshm. The example therefore lists both
-modules under `"dependencies"`; installing only the Linux adapter leaves
-`"nsh-ext"` unavailable to TSX. No custom host or `"rust"` entry is used.
-See [the Linux TSX example](examples/nshm-linux/) for the reproducible native
-acceptance command. The existing Rust registration APIs remain available on
-every adapter. Only Linux automatic registration is exercised here; Android,
-Apple, Windows and GPUI keep their existing embedding paths.
+For macOS, iOS, and Mac Catalyst use `crates/apple` instead of `crates/linux`;
+for Windows use `crates/windows`. NSH builds the app's host with these modules
+and registers the matching native component. Declare both the shared module
+and the adapter in `nsh.json` `dependencies`: Cargo links the adapter's
+dependency on `nsh-ext`, but the CLI needs the separate entry for its TSX export.
+No app Rust crate or `"rust"` entry is required.
+
+Existing embedding hosts still register their own components. For GPUI the
+host supplies the adapter through `AppOptions`; Android's Java host registers
+the companion AAR with `WebViewExtension.register(NshView)`. A prebuilt Android
+embedding SDK uses `nativeComponent` as shown in the [Android guide](android/).
+
+See [the Linux TSX example](examples/nshm-linux/) for native acceptance.
 
 ## Development
 

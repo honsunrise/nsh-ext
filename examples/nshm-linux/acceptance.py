@@ -7,7 +7,7 @@ The script owns the fixture and the resources around it:
   serves a fast page and a slowly streamed page;
 * a second ephemeral socket is bound without listening, reserving an address
   that refuses connections instead of returning an HTTP error status;
-* the pinned ``nsh`` binary is started in the example directory with
+* the released NSH 0.7.0 CLI is started in the example directory with
   ``nsh test . --target linux``, receiving both addresses through the
   app's granted environment variables;
 * the child runs in its own process group, so a timeout or Ctrl-C takes its
@@ -22,7 +22,7 @@ a PNG, then prints its path.
 Needs a display: run it under ``xvfb-run -a`` in a session without one.
 
     xvfb-run -a python3 examples/nshm-linux/acceptance.py \\
-        --nsh /path/to/pinned/nsh
+        --nsh /path/to/nsh
 """
 
 from __future__ import annotations
@@ -230,7 +230,7 @@ def main() -> int:
     parser.add_argument(
         "--nsh",
         required=True,
-        help="the pinned nsh binary that runs the acceptance (a path, or a name on PATH)",
+        help="the NSH 0.7.0 executable (a path, or a name on PATH)",
     )
     parser.add_argument("--filter", help="run only tests whose name contains this")
     parser.add_argument("--trace", action="store_true", help="pass --trace to nsh test")

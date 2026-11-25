@@ -13,7 +13,7 @@ decides which sources it passes.
 
 - Windows 10/11 with the WebView2 Evergreen Runtime installed.
 - Rust 1.97 or later, edition 2024.
-- NSH `nsh-platform-windows` `=0.6.0` (a published release, not a fork);
+- NSH `nsh-platform-windows` `=0.7.0` (a published release, not a fork);
   the application, its host and this adapter share that NSH version.
 - `webview2-com-sys` links `WebView2LoaderStatic` on MSVC; GNU targets
   need `WebView2Loader.dll` beside the executable.
@@ -23,6 +23,9 @@ This package has its own `Cargo.toml`/lock graph, separate from the root
 root crate or the other adapters.
 
 ## Use
+
+[Install both nshm](../../README.md#install-as-an-nshm) for automatic registration
+in an NSH-generated Windows host. To register directly in an embedding host:
 
 ```rust
 use nsh_platform_windows::{AppOptions, AppSource, Root, run_app};
@@ -214,7 +217,7 @@ assertion failure.
 
 The WebView2 environment/controller setup was adapted from
 `nsh-platform-windows` 0.5.1 (Apache-2.0, Longbridge), the release it was
-written against; the adapter targets the published 0.6.0 API, whose public
+written against; the adapter targets the published 0.7.0 API, whose public
 `NativeComponent` contract is used here. The extension-owned host,
 navigation correlation and progress mapping are its own.
 

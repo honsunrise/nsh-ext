@@ -51,15 +51,20 @@
 //! URLs are acceptable: this adapter does not apply Native Shell's URL
 //! grants to the page it loads.
 
-#![cfg_attr(
-    not(any(target_os = "ios", target_os = "macos")),
-    allow(dead_code, unused_imports)
-)]
+use nsh_core::element::{Registry, native_components, native_module};
 
-#[cfg(not(any(target_os = "ios", target_os = "macos")))]
-compile_error!(
-    "nsh-ext-apple supports only iOS (including Mac Catalyst) and macOS; use another nsh-ext adapter for this target"
-);
+#[native_module("nsh-ext-apple")]
+fn native(_registry: &mut Registry) {}
+
+#[native_components(ios)]
+fn ios_components(components: &nsh_platform_ios::Components) {
+    register_components(components);
+}
+
+#[native_components(macos)]
+fn macos_components(components: &nsh_platform_macos::Components) {
+    register_components(components);
+}
 
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 mod tracker;
@@ -81,6 +86,7 @@ pub use platform::{ComponentContext, ComponentFactory, Components, NativeCompone
 #[cfg(any(target_os = "ios", target_os = "macos"))]
 use webview::WebViewComponent;
 
+#[cfg(any(target_os = "ios", target_os = "macos"))]
 use std::rc::Rc;
 
 /// Makes the factory that creates one extension component per element.

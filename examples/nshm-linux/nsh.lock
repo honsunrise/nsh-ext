@@ -3,13 +3,13 @@
   "packages": [
     {
       "name": "nsh-ext",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "path": "../..",
       "module": "nsh-ext"
     },
     {
       "name": "nsh-ext-linux",
-      "version": "0.6.0",
+      "version": "0.7.0",
       "path": "../../crates/linux",
       "module": "nsh-ext-linux"
     }

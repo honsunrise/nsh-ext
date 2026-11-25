@@ -1,22 +1,24 @@
 [package]
 name = "nsh-ext-windows"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
 description = "Windows WebView2 adapter for nsh-ext, hosted as an NSH native component"
 repository = "https://github.com/honsunrise/nsh-ext"
 readme = "README.md"
+keywords = ["nsh", "nshm", "webview"]
 include = ["src/**", "examples/**", "README.md", "LICENSE-APACHE", "Cargo.toml"]
 autoexamples = false
 
 [dependencies]
-nsh-ext = { version = "0.6.0", path = "../.." }
+nsh-ext = { version = "=0.7.0", path = "../.." }
+nsh-core = { version = "=0.7.0", default-features = false }
 log = "0.4"
 serde_json = "1"
 
 [target.'cfg(windows)'.dependencies]
-nsh-platform-windows = { version = "=0.6.0", default-features = false }
+nsh-platform-windows = { version = "=0.7.0", default-features = false }
 webview2-com = "0.39"
 windows = { version = "0.62", features = [
     "Win32_Foundation",
@@ -30,9 +32,6 @@ windows = { version = "0.62", features = [
     "Win32_UI_HiDpi",
     "Win32_UI_WindowsAndMessaging",
 ] }
-
-[dev-dependencies]
-nsh-core = { version = "=0.6.0", default-features = false }
 
 [[example]]
 name = "progress"

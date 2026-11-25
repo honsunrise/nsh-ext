@@ -6,7 +6,7 @@ The [`nsh-ext`](../..) WebView for Native Shell's **GPUI** backend, as a
 container.
 
 It implements the published `NativeComponent` contract of
-`nsh-platform-gpui =0.6.0` and builds its own native view with GPUI Fast's
+`nsh-platform-gpui =0.7.0` and builds its own native view with GPUI Fast's
 public window-composition API. It does not replace, patch or reuse the backend's
 own WebView, and it needs no fork of Native Shell.
 
@@ -21,7 +21,7 @@ graph, and its GTK 3 / WebKitGTK 4.1 dependencies, never mix with another
 adapter's. Linux needs an X11 (or Xwayland) window: WebKitGTK does not embed
 into Wayland surfaces.
 
-The manifest fixes GPUI Fast to NSH 0.6.0's published `0.1.16` baseline, the
+The manifest fixes GPUI Fast to NSH 0.7.0's published `0.1.19` baseline, the
 whole family exactly (`gpui-fast`, `gpui-fast-platform`, `gpui-fast-macros`).
 An application embedding the adapter resolves that same family, as it must with
 the backend itself: one GPUI per application, `cargo tree -i gpui-fast` showing

@@ -42,11 +42,11 @@ repository root.
 
 ## Requirements
 
-- The **unmodified released Native Shell 0.6.0 `nsh.aar`**. It is not downloaded
+- The **unmodified released Native Shell 0.7.0 `nsh.aar`**. It is not downloaded
   or committed. Take the `nsh-embed-android.zip` asset of the
-  [`v0.6.0` release](https://github.com/longbridge/nsh/releases/download/v0.6.0/nsh-embed-android.zip)
+  [`v0.7.0` release](https://github.com/longbridge/nsh/releases/download/v0.7.0/nsh-embed-android.zip)
   and use `nsh-embed-android/nsh.aar` (its `nsh-dev.aar` is the development
-  build), or `dist/nsh/embed/android/nsh.aar` from a 0.6.0 source distribution.
+  build), or `dist/nsh/embed/android/nsh.aar` from a 0.7.0 source distribution.
   Put it at `android/libs/nsh.aar`, or pass
   `-PnshAar=/absolute/path/to/nsh.aar`. Both `webview/` and `example/` fail
   configuration with that instruction when it is missing. (`nsh-android.tar.gz`
@@ -55,33 +55,15 @@ repository root.
 - Android 8 (API 26) or newer, a device or emulator with a WebView provider, and
   `INTERNET` (declared by the library and by the AAR).
 - JDK 17, Gradle 8.9+ and Android Gradle Plugin 8.7.3 (declared in the root
-  `build.gradle`), `compileSdk 35`. No Gradle wrapper is checked in. These are
-  the same expectations as for 0.5.1: the 0.6.0 AAR still declares `minSdkVersion
-  26`, is still Java 17 bytecode, and its `libnsh.so` keeps the 16 KB ELF LOAD
-  alignment that 0.5.1 also shipped.
+  `build.gradle`), `compileSdk 35`. No Gradle wrapper is checked in.
 
-### What NSH 0.6.0 changes here
+### Host registration
 
-The released 0.6.0 SDK keeps the component API this adapter compiles against
-byte for byte: `NshComponent` (with its `Factory`) and `NshComponentContext` are
-identical files to 0.5.1, and `NshView.registerComponent` is unchanged. The
-native-component transport (`setProp`, `emit`, `command`, `destroy`, the host
-channel) is unchanged too, so the Java component and the TSX apps need no
-adaptation.
-
-`NshView` gains one public method, `setAdditionalSafeAreaInsets(int, int, int,
-int)`, for a host drawing its own UI over the view; a full-view embedder needs
-nothing from it. The rest of 0.6.0's changes are internal to the SDK — key
-dispatch, safe-area reporting, new built-in components — not in the
-native-component transport.
-
-0.6.0 adds the `application`, `homeDir` and `share` capabilities, which only an
-app that declares no `capabilities` at all gets by default.
-[`fixture/nsh.json`](fixture/nsh.json) declares only its existing `host` grants,
-so it receives none of the three and uses none: it posts its events to the
-`nsh-ext.fixture` channel already granted. [`example/nsh.json`](example/nsh.json)
-declares no capabilities and keeps the defaults. Do not add grants the apps do
-not use.
+The released SDK retains the Java `NshComponent` factory and the public
+`NshComponentContext` methods this adapter uses. The Java host calls
+`WebViewExtension.register(NshView)` before loading the bundle, which declares
+the view with `nativeComponent`. NSH can package an AAR into a standalone app,
+but that does not install its Java factory on the app's `NshView`.
 
 ### Packaging
 
@@ -98,15 +80,15 @@ The released AAR is **not** modified, repackaged or patched:
 
 ### Using the companion archive
 
-The 0.6.0 companion archive is named `nsh-ext-android-0.6.0.zip` and targets NSH
-0.6.0. Keep the runtime, app and companion on the same version. Copy
-`nsh-ext-android-0.6.0.aar` and the unmodified NSH SDK `nsh.aar` into the host
+The 0.7.0 companion archive is named `nsh-ext-android-0.7.0.zip` and targets NSH
+0.7.0. Keep the runtime, app and companion on the same version. Copy
+`nsh-ext-android-0.7.0.aar` and the unmodified NSH SDK `nsh.aar` into the host
 application's `libs/` directory, then add both files:
 
 ```kotlin
 dependencies {
     implementation(files("libs/nsh.aar"))
-    implementation(files("libs/nsh-ext-android-0.6.0.aar"))
+    implementation(files("libs/nsh-ext-android-0.7.0.aar"))
 }
 ```
 
@@ -259,7 +241,7 @@ The tradeoffs and irreducible limits, stated rather than papered over:
 
 ```sh
 # From the repository root. Gradle 8.9+, JDK 17, ANDROID_HOME set, and the
-# unmodified 0.6.0 nsh.aar either at android/libs/nsh.aar or passed with -PnshAar.
+# unmodified 0.7.0 nsh.aar either at android/libs/nsh.aar or passed with -PnshAar.
 export ANDROID_HOME=/path/to/android-sdk
 NSH_AAR=/absolute/path/to/nsh.aar
 

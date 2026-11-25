@@ -5,9 +5,8 @@
 //! profile (`%LOCALAPPDATA%\nsh-ext\WebView2`) instead of reaching into
 //! NSH's built-in web view state.
 //!
-//! Portions of the setup were adapted from `nsh-platform-windows` 0.5.1
-//! (Apache-2.0, Longbridge), the release this host was written against, and
-//! are kept against the 0.6.0 contract it now targets.
+//! Portions of the setup come from `nsh-platform-windows` 0.5.1
+//! (Apache-2.0, Longbridge); the adapter targets the 0.7.0 contract.
 
 use std::{
     cell::RefCell,

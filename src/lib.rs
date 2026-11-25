@@ -24,8 +24,8 @@ pub const PROGRESS_EVENT: &str = "loadProgress";
 /// The crate's UI set: what TSX imports as `nsh-ext`.
 ///
 /// It exports the typed `WebView` component, whose `src`, `trackProgress`
-/// and `onLoadProgress` mirror the native protocol. Native adapters still
-/// have to be registered by the embedding host.
+/// and `onLoadProgress` mirror the native protocol. Install the matching
+/// adapter or register it in the embedding host.
 #[native_module("nsh-ext")]
 fn register_webview(registry: &mut Registry) {
     registry.register::<webview::WebView>();
