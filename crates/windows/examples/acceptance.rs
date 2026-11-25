@@ -235,21 +235,7 @@ mod app {
                         1 => {
                             update(|report| report.marker_finished = true);
                             listener_phase.set(2);
-                            // Let the marker page's timer, worker and open
-                            // request report before the browser that owns
-                            // them is retired.
-                            let clear_src = listener_src;
-                            let next_src = listener_src;
-                            let next = urls.missing.clone();
-                            set_timeout(Duration::from_millis(700), move || {
-                                update(|report| report.clear_requested = Some(Instant::now()));
-                                clear_src.set(String::new());
-                                // The next source waits for the retired
-                                // browser to be replaced.
-                                set_timeout(Duration::from_millis(1200), move || {
-                                    next_src.set(next);
-                                });
-                            });
+                            clear_marker_when_live(listener_src, urls.missing.clone());
                         }
                         2 => {
                             update(|report| report.missing_finished = true);
@@ -335,6 +321,19 @@ mod app {
             })
             .flex_1();
         view().flex_1().child(page)
+    }
+
+    fn clear_marker_when_live(src: Signal<String>, next: String) {
+        if !crate::support::marker_is_live() {
+            set_timeout(Duration::from_millis(50), move || {
+                clear_marker_when_live(src, next)
+            });
+            return;
+        }
+        update(|report| report.clear_requested = Some(Instant::now()));
+        src.set(String::new());
+        // This quiet interval detects the retired page continuing to run.
+        set_timeout(Duration::from_millis(1200), move || src.set(next));
     }
 
     fn record_event(progress: &LoadProgress) {

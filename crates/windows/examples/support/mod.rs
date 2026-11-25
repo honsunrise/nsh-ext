@@ -38,21 +38,18 @@ const PAGE_MISSING: &str = "<!doctype html><html><head><meta charset=\"utf-8\">\
 /// A page whose timer, worker and open request never stop on their own.
 ///
 /// They only stop when the document that owns them is destroyed, which is
-/// what the server observes after the source is cleared. The worker runs
-/// from a `blob:` URL, whose base URL cannot resolve a relative request, so
-/// the worker source carries the page origin as an absolute URL.
+/// what the server observes after the source is cleared. The worker script
+/// is served from the page's own origin.
 const PAGE_MARKER: &str = "<!doctype html><html><head><meta charset=\"utf-8\">\
     <title>marker</title></head><body>\
     <h1>marker</h1><script>\
     setInterval(function(){navigator.sendBeacon('/beat?kind=timer');},100);\
-    try{\
-    var beat=location.origin+'/beat?kind=worker';\
-    var source='setInterval(function(){fetch('+JSON.stringify(beat)+')'+\
-    '.catch(function(){});},120)';\
-    new Worker(URL.createObjectURL(new Blob([source],{type:'text/javascript'})));\
-    }catch(e){}\
+    const markerWorker=new Worker('/marker-worker.js');\
     fetch('/stream').catch(function(){});\
     </script></body></html>";
+
+const MARKER_WORKER: &str = "function beat(){fetch('/beat?kind=worker').catch(function(){});}\
+    beat();setInterval(beat,120);";
 
 /// The URLs the acceptance navigates to.
 #[derive(Clone, Debug)]
@@ -136,6 +133,26 @@ pub fn stream() -> Stream {
         .unwrap_or_else(|poisoned| poisoned.into_inner())
 }
 
+/// Both execution contexts have reported repeated activity and the marker's
+/// long-lived request is open. Clearing before this would prove nothing.
+pub fn marker_is_live() -> bool {
+    let beats = BEATS
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let timers = beats
+        .iter()
+        .filter(|(kind, _)| *kind == Beat::Timer)
+        .take(2)
+        .count();
+    let workers = beats
+        .iter()
+        .filter(|(kind, _)| *kind == Beat::Worker)
+        .take(2)
+        .count();
+    let stream = stream();
+    timers == 2 && workers == 2 && stream.opened > 0 && stream.closed.is_none()
+}
+
 /// The local server. Its thread lives for the process.
 pub struct Server {
     pub urls: Urls,
@@ -197,10 +214,16 @@ fn handle(mut stream: TcpStream) {
         hold_stream(&mut stream);
         return;
     }
+    let content_type = if path == "/marker-worker.js" {
+        "text/javascript"
+    } else {
+        "text/html"
+    };
     let (status, body, delay) = match path {
         "/missing" => ("404 Not Found", PAGE_MISSING, None),
         "/slow" => ("200 OK", PAGE_OK, Some(Duration::from_millis(1500))),
         "/marker" => ("200 OK", PAGE_MARKER, None),
+        "/marker-worker.js" => ("200 OK", MARKER_WORKER, None),
         "/ok" | "/ok2" | "/next" => ("200 OK", PAGE_OK, None),
         path if path.starts_with("/size?") => {
             record_size(path);
@@ -216,7 +239,7 @@ fn handle(mut stream: TcpStream) {
         std::thread::sleep(delay);
     }
     let response = format!(
-        "HTTP/1.1 {status}\r\nContent-Type: text/html; charset=utf-8\r\n\
+        "HTTP/1.1 {status}\r\nContent-Type: {content_type}; charset=utf-8\r\n\
          Content-Length: {}\r\nConnection: close\r\n\r\n{body}",
         body.len()
     );
