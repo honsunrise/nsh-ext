@@ -171,8 +171,8 @@ cargo run --manifest-path crates/windows/Cargo.toml --example acceptance
   with a reactive source, a progress status line, source switches and a
   Clear action.
 - `examples/acceptance.rs` is the actual NSH acceptance: it registers the
-  adapter on `AppOptions::components`, runs `run_app` with a Rust `Root`,
-  and builds the page with `nsh_ext::web_view().on_load_progress(...)`.
+  adapter on `AppOptions::components`, opens an explicit NSH desktop window,
+  and fills it with `nsh_ext::web_view().on_load_progress(...)`.
   It starts with an empty source, so clearing before anything loaded must
   emit nothing and make no page. A local HTTP server provides a successful
   page, a 404 page, a slow page, a marker page whose timer, worker and open
@@ -196,7 +196,8 @@ cargo run --manifest-path crates/windows/Cargo.toml --example acceptance
   same unit relation is checked exactly. Every event comes from WebView2's
   native callbacks; `loading` fractions, a numeric estimate on
   `started`/`failed`, and zero used for unknown all fail the acceptance.
-  Exit code 0 passes, 1 fails, 2 times out.
+  The harness waits for the window to close before checking its verdict:
+  exit code 0 passes, 1 fails, 2 times out.
 
 Both require the WebView2 runtime. Run them on Windows with
 `cd crates/windows`; the acceptance harness exits nonzero on any contract

@@ -1,7 +1,7 @@
 //! Acceptance for the real NSH native-component path.
 //!
-//! It registers the adapter on `AppOptions::components`, runs an NSH
-//! `run_app` with a Rust `Root`, and builds the page with
+//! It registers the adapter on `AppOptions::components`, opens an explicit
+//! NSH window from a Rust root, and builds the page with
 //! `nsh_ext::web_view().on_load_progress(...)`. A local server provides
 //! successful pages, a 404 document, a slow navigation, a marker page and a
 //! closed local port. The app then walks:
@@ -35,10 +35,7 @@
 #![cfg_attr(not(windows), allow(dead_code, unused_imports))]
 
 use std::{
-    sync::{
-        Mutex,
-        atomic::{AtomicBool, Ordering},
-    },
+    sync::Mutex,
     time::{Duration, Instant},
 };
 
@@ -46,7 +43,6 @@ use std::{
 #[path = "support/mod.rs"]
 mod support;
 
-static DONE: AtomicBool = AtomicBool::new(false);
 static REPORT: Mutex<Report> = Mutex::new(Report {
     source_set: false,
     initial_finished: false,
@@ -164,6 +160,26 @@ mod app {
 
     #[component]
     pub fn Acceptance() -> impl IntoElement {
+        // Keep the app alive until the real window closed and its component
+        // was torn down. The standalone runner exits the process itself.
+        window::set_quit_mode(nsh_core::desktop::QuitMode::Explicit);
+        window::on_last_window_closed(|| {
+            set_timeout(Duration::from_millis(250), || {
+                std::process::exit(if super::check() == std::process::ExitCode::SUCCESS {
+                    0
+                } else {
+                    1
+                });
+            });
+        });
+        window::window()
+            .id("main")
+            .title("nsh-ext Windows acceptance")
+            .default_size(size(px(640.0), px(520.0)))
+            .content(content)
+    }
+
+    fn content() -> impl IntoElement {
         let urls = crate::support::urls();
         // An empty source first: creating the component and clearing it
         // before anything loaded must make no browser and emit no event.
@@ -474,26 +490,22 @@ fn main() -> std::process::ExitCode {
     std::thread::spawn(|| {
         // Every explicit source change makes a new browser; allow for the
         // cold starts of several of them plus the deliberate waits.
-        for _ in 0..600 {
-            if DONE.load(Ordering::SeqCst) {
-                return;
-            }
-            std::thread::sleep(std::time::Duration::from_millis(100));
-        }
+        std::thread::sleep(Duration::from_secs(60));
         eprintln!("FAIL: acceptance timed out waiting for NSH/WebView2");
+        match REPORT.try_lock() {
+            Ok(report) => eprintln!("Last acceptance state: {report:#?}"),
+            Err(error) => eprintln!("Cannot read acceptance state: {error}"),
+        }
         std::process::exit(2);
     });
 
     let options = AppOptions {
         title: "nsh-ext Windows acceptance".to_owned(),
         app_id: "dev.nsh.ext.windows.acceptance".to_owned(),
-        size: (640, 520),
         ..Default::default()
     };
     nsh_ext_windows::register(&options.components);
-    let _ = run_app(AppSource::Rust(Root::of::<app::Acceptance>()), options);
-    DONE.store(true, Ordering::SeqCst);
-    check()
+    run_app(AppSource::Rust(Root::of::<app::Acceptance>()), options)
 }
 
 /// The `/ok` page's last viewport report, once the server has it.
