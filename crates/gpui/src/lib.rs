@@ -16,13 +16,14 @@
 //!     type Props = ();
 //!     type Event = NoEvent;
 //!     fn view(_: (), _: Scope<NoEvent>) -> impl IntoElement {
-//!         nsh_ext::web_view().src("https://example.com").flex_1()
+//!         nsh_core::element::desktop::window()
+//!             .id("main")
+//!             .title("My app")
+//!             .content(|| nsh_ext::web_view().src("https://example.com").flex_1())
 //!     }
 //! }
 //!
-//! let mut options = AppOptions::default();
-//! options.title = "My app".to_owned();
-//! let options = nsh_ext_gpui::install(options);
+//! let options = nsh_ext_gpui::install(AppOptions::default());
 //! let root = Root::of::<App>();
 //! run_app(AppSource::Rust(root), options);
 //! ```

@@ -4,7 +4,7 @@
 # needs GTK 4 has its own.
 [package]
 name = "nsh-ext-gpui"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2024"
 rust-version = "1.97"
 license = "Apache-2.0"
@@ -21,13 +21,13 @@ default = []
 runtime-shaders = ["nsh-platform-gpui/runtime-shaders"]
 
 [dependencies]
-nsh-ext = { version = "0.6.0", path = "../.." }
-nsh-core = { version = "=0.6.0", default-features = false }
+nsh-ext = { version = "=0.7.0", path = "../.." }
+nsh-core = { version = "=0.7.0", default-features = false }
 # The GPUI backend of Native Shell, whose public `NativeComponent` contract this
 # adapter implements. `webview` stays off: this crate owns its own wry web view
 # and never replaces the backend's. `js` too: the examples run Rust roots, and
 # the adapter itself never runs an app's code.
-nsh-platform-gpui = { version = "=0.6.0", default-features = false }
+nsh-platform-gpui = { version = "=0.7.0", default-features = false }
 log = "0.4"
 # `lb-wry`: the crate published under wry's name API, the version the GPUI
 # backend uses (and the one GPUI Kit's `gpui-webview` uses).
@@ -37,12 +37,12 @@ wry = { package = "lb-wry", version = "=0.53.3", default-features = false, featu
 ] }
 
 [target.'cfg(any(target_os = "linux", target_os = "macos", windows))'.dependencies]
-# NSH 0.6.0 builds with this GPUI Fast family, so the pins match the backend's
+# NSH 0.7.0 builds with this GPUI Fast family, so the pins match the backend's
 # exactly: an application must resolve one GPUI, and lockfiles alone cannot
 # constrain resolution in applications consuming this library.
-gpui-fast = { version = "=0.1.16", default-features = false }
-gpui-fast-platform = { version = "=0.1.16", default-features = false }
-gpui-fast-macros = "=0.1.16"
+gpui-fast = { version = "=0.1.19", default-features = false }
+gpui-fast-platform = { version = "=0.1.19", default-features = false }
+gpui-fast-macros = "=0.1.19"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 anyhow = "1"

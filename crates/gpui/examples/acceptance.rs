@@ -51,10 +51,8 @@
 //! A failure prints the violations and exits 1. The process exits directly (the
 //! script's last step) so the exit code is the verdict.
 //!
-//! What it judges is the native progress wire, not the painted page: the view
-//! is built and navigated on the first frame of its container, so every native
-//! callback it asserts arrives whether or not the page is on screen. The
-//! interactive demo is where the page's size and clipping are looked at.
+//! The harness mounts the app in an `AppView` in a GPUI window, just as an
+//! embedding host does. It judges the native progress wire.
 
 use std::{
     cell::{Cell, RefCell},
@@ -68,7 +66,9 @@ use std::{
 
 use nsh_core::prelude::*;
 use nsh_ext::{LoadProgress, LoadState};
-use nsh_platform_gpui::{AppOptions, AppSource, Root, run_app};
+use nsh_platform_gpui::{Root, gpui};
+
+mod support;
 
 /// How long the script may take before the harness fails it.
 const SCRIPT_TIMEOUT: Duration = Duration::from_secs(30);
@@ -611,11 +611,12 @@ fn main() -> std::process::ExitCode {
         std::env::consts::OS
     );
     let root = Root::of::<Acceptance>().app_id("dev.nsh.ext.gpui.acceptance");
-    let options = nsh_ext_gpui::install(AppOptions {
-        title: "nsh-ext acceptance".to_owned(),
-        app_id: "dev.nsh.ext.gpui.acceptance".to_owned(),
-        size: (900, 640),
-        ..Default::default()
-    });
-    run_app(AppSource::Rust(root), options)
+    support::run(
+        root,
+        "nsh-ext acceptance",
+        gpui::size(gpui::px(900.0), gpui::px(640.0)),
+        true,
+    );
+    eprintln!("[acceptance] FAIL window closed before the script had a verdict");
+    std::process::ExitCode::FAILURE
 }

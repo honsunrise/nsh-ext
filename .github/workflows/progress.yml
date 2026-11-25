@@ -45,6 +45,18 @@ jobs:
       - run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - run: cargo clippy --manifest-path crates/linux/Cargo.toml --all-targets -- -D warnings
       - run: xvfb-run -a dbus-run-session -- cargo run --manifest-path crates/linux/Cargo.toml --example acceptance
+      - name: Check and run the nshm example with the released CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdk="$PWD/.nsh/sdk"
+          mkdir -p "$sdk"
+          base=https://github.com/longbridge/nsh/releases/download/v0.7.0
+          curl -fLsS --retry 3 "$base/nsh-linux-x86_64.tar.gz" -o "$sdk/nsh-linux-x86_64.tar.gz"
+          echo 'd281bfa3d93d84e9831e1a97dfdb63104329fcc87a0a48c78db5aeabb00c0073  nsh-linux-x86_64.tar.gz' | (cd "$sdk" && sha256sum -c -)
+          tar -xzf "$sdk/nsh-linux-x86_64.tar.gz" -C "$sdk" nsh/bin/nsh
+          "$sdk/nsh/bin/nsh" check examples/nshm-linux
+          xvfb-run -a dbus-run-session -- python3 examples/nshm-linux/acceptance.py --nsh "$sdk/nsh/bin/nsh"
 
   apple:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
@@ -107,7 +119,14 @@ jobs:
           cache: ext-windows
           lockfiles: crates/windows/Cargo.lock
       - run: cargo clippy --manifest-path crates/windows/Cargo.toml --all-targets -- -D warnings
-      - run: cargo run --manifest-path crates/windows/Cargo.toml --example acceptance
+      - name: Run Win32 WebView2 acceptance
+        shell: pwsh
+        run: |
+          cargo run --locked --manifest-path crates/windows/Cargo.toml --example acceptance | Tee-Object -Variable output
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not ($output -match '^PASS: NSH native component')) {
+            throw 'The WebView2 acceptance process exited without a verdict.'
+          }
 
   gpui:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
@@ -151,12 +170,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.14.6"
-      - name: Fetch released, unmodified NSH 0.6.0
+      - name: Fetch released, unmodified NSH 0.7.0
         shell: bash
         run: |
           mkdir -p .nsh/sdk
           cd .nsh/sdk
-          base=https://github.com/longbridge/nsh/releases/download/v0.6.0
+          base=https://github.com/longbridge/nsh/releases/download/v0.7.0
           curl -fLsS -O "$base/nsh-embed-android.zip"
           curl -fLsS -O "$base/nsh-embed-android.zip.sha256"
           curl -fLsS -O "$base/nsh-linux-x86_64.tar.gz"

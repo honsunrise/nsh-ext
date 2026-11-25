@@ -2,24 +2,37 @@
 //!
 //! Register the platform adapter before loading an app, then create [`web_view`].
 //! The extension owns its browser view; it does not patch NSH's built-in WebView.
+//! The same native component is exported to TSX as `WebView` by this crate's UI set.
 //! Native estimates remain estimates, and an unavailable estimate is [`None`].
 
 use std::fmt;
 
 use nsh_core::element::{
-    AnyElement, ElNode, Element, IntoElement, IntoReactive, NativeEvent, NativeView, Reactive,
-    native,
+    AnyElement, ElNode, Element, IntoElement, IntoReactive, NativeEvent, NativeView, PropEnum,
+    Reactive, Registry, native, native_module,
 };
 use nsh_core::{JsonValue, geometry::Percentage};
 use serde::{Deserialize, Serialize};
+
+mod webview;
 
 /// The native component name registered by every adapter.
 pub const COMPONENT_NAME: &str = "nsh-ext.webview";
 /// The native event shared by the Rust wrapper and Java/Swift embedding hosts.
 pub const PROGRESS_EVENT: &str = "loadProgress";
 
+/// The crate's UI set: what TSX imports as `nsh-ext`.
+///
+/// It exports the typed `WebView` component, whose `src`, `trackProgress`
+/// and `onLoadProgress` mirror the native protocol. Install the matching
+/// adapter or register it in the embedding host.
+#[native_module("nsh-ext")]
+fn register_webview(registry: &mut Registry) {
+    registry.register::<webview::WebView>();
+}
+
 /// A native browser's loading lifecycle, separate from its estimated fraction.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize, PropEnum)]
 #[serde(rename_all = "camelCase")]
 #[non_exhaustive]
 pub enum LoadState {

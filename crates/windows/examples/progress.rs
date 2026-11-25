@@ -26,6 +26,14 @@ mod app {
 
     #[component]
     pub fn Demo() -> impl IntoElement {
+        nsh_core::element::desktop::window()
+            .id("main")
+            .title("nsh-ext WebView2")
+            .default_size(size(px(960.0), px(720.0)))
+            .content(content)
+    }
+
+    fn content() -> impl IntoElement {
         let src = signal(HOME.to_owned());
         let status = signal("no navigation yet".to_owned());
         let shown = status;
@@ -75,7 +83,6 @@ fn main() -> std::process::ExitCode {
     let options = AppOptions {
         title: "nsh-ext WebView2".to_owned(),
         app_id: "dev.nsh.ext.windows.example".to_owned(),
-        size: (960, 720),
         ..Default::default()
     };
     nsh_ext_windows::register(&options.components);

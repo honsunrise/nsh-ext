@@ -118,3 +118,21 @@ fn cancellation_is_terminal_for_that_navigation_only() {
     assert!(tracker.cancel(old).is_none());
     assert_eq!(tracker.finish(new).unwrap().state, LoadState::Finished);
 }
+
+#[test]
+fn every_state_keeps_its_wire_name() {
+    for (wire, state) in [
+        ("started", LoadState::Started),
+        ("loading", LoadState::Loading),
+        ("finished", LoadState::Finished),
+        ("failed", LoadState::Failed),
+        ("cancelled", LoadState::Cancelled),
+    ] {
+        let progress = LoadProgress::from_value(&json!({
+            "navigation": 1, "state": wire, "progress": null, "message": null
+        }))
+        .unwrap();
+        assert_eq!(progress.state, state);
+        assert_eq!(progress.to_value()["state"], json!(wire));
+    }
+}

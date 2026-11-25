@@ -29,9 +29,8 @@
 //! window's DPI, so the page's CSS viewport is the window's client area
 //! divided by the window's scale at any DPI (2x included).
 //!
-//! Portions of the WebView2 setup were adapted from `nsh-platform-windows`
-//! 0.5.1 (Apache-2.0, Longbridge), the release this host was written against,
-//! and are kept against the 0.6.0 contract it now targets.
+//! Portions of the WebView2 setup come from `nsh-platform-windows` 0.5.1
+//! (Apache-2.0, Longbridge); the adapter targets the 0.7.0 contract.
 
 use std::{
     cell::{Cell, RefCell},
@@ -69,10 +68,10 @@ use webview2_com::{
         COREWEBVIEW2_WEB_ERROR_STATUS_OPERATION_CANCELED,
         COREWEBVIEW2_WEB_ERROR_STATUS_REDIRECT_FAILED,
         COREWEBVIEW2_WEB_ERROR_STATUS_SERVER_UNREACHABLE, COREWEBVIEW2_WEB_ERROR_STATUS_TIMEOUT,
-        COREWEBVIEW2_WEB_ERROR_STATUS_UNEXPECTED_ERROR, ICoreWebView2, ICoreWebView2Controller,
-        ICoreWebView2Controller3, ICoreWebView2Environment,
-        ICoreWebView2NavigationCompletedEventArgs, ICoreWebView2NavigationStartingEventArgs,
-        ICoreWebView2ProcessFailedEventArgs,
+        COREWEBVIEW2_WEB_ERROR_STATUS_UNEXPECTED_ERROR, COREWEBVIEW2_WEB_ERROR_STATUS_UNKNOWN,
+        ICoreWebView2, ICoreWebView2Controller, ICoreWebView2Controller3, ICoreWebView2Environment,
+        ICoreWebView2NavigationCompletedEventArgs, ICoreWebView2NavigationCompletedEventArgs2,
+        ICoreWebView2NavigationStartingEventArgs, ICoreWebView2ProcessFailedEventArgs,
     },
     NavigationCompletedEventHandler, NavigationStartingEventHandler, ProcessFailedEventHandler,
     take_pwstr,
@@ -756,27 +755,36 @@ impl HostState {
         }
         self.active.set(None);
         let mut success = windows::core::BOOL(0);
-        // `IsSuccess` is the navigation outcome. An HTTP error page (404,
-        // say) is still a completed navigation; a connection failure is
-        // not. Do not infer failure from the HTTP status alone.
         // SAFETY: a getter on the live event arguments.
         let success = unsafe { args.IsSuccess(&mut success) }
             .map(|()| success.as_bool())
             .unwrap_or(false);
-        if success {
-            let finished = self.tracker.borrow_mut().finish(active.navigation);
-            self.publish(finished);
-        } else {
-            let mut status = COREWEBVIEW2_WEB_ERROR_STATUS(0);
+        let mut status = COREWEBVIEW2_WEB_ERROR_STATUS_UNKNOWN;
+        if !success {
             // SAFETY: a getter on the live event arguments.
             unsafe {
                 let _ = args.WebErrorStatus(&mut status);
             }
-            if status == COREWEBVIEW2_WEB_ERROR_STATUS_OPERATION_CANCELED {
-                let cancelled = self.tracker.borrow_mut().cancel(active.navigation);
-                self.publish(cancelled);
-                return Ok(());
-            }
+        }
+        // WebView2 reports IsSuccess=false even for a delivered HTTP error
+        // document. UNKNOWN with a 4xx/5xx response is distinct from a
+        // connection failure, a cancellation, or an aborted response.
+        let http_error_document = !success
+            && status == COREWEBVIEW2_WEB_ERROR_STATUS_UNKNOWN
+            && args
+                .cast::<ICoreWebView2NavigationCompletedEventArgs2>()
+                .is_ok_and(|args| {
+                    let mut code = 0;
+                    // SAFETY: a getter on the live event arguments.
+                    unsafe { args.HttpStatusCode(&mut code) }.is_ok() && (400..600).contains(&code)
+                });
+        if success || http_error_document {
+            let finished = self.tracker.borrow_mut().finish(active.navigation);
+            self.publish(finished);
+        } else if status == COREWEBVIEW2_WEB_ERROR_STATUS_OPERATION_CANCELED {
+            let cancelled = self.tracker.borrow_mut().cancel(active.navigation);
+            self.publish(cancelled);
+        } else {
             let message = if self.track.get() {
                 describe(status)
             } else {

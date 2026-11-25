@@ -268,13 +268,13 @@ public final class WebViewComponentTest {
     }
 
     @Test
-    public void replacingTheSourceCancelsTheLoadInFlight() {
+    public void replacingTheSourceCancelsTheLoadInFlight() throws InterruptedException {
         start();
         setProps(true, server.url("/slow"));
         Map<String, Object> started = await("started");
         assertEquals(1L, navigation(started));
 
-        SystemClock.sleep(400);
+        assertTrue("the slow response is in flight", server.awaitSlowResponse(TIMEOUT_MS));
         setProps(true, server.url("/a"));
 
         Map<String, Object> cancelled = await("cancelled");

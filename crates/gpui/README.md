@@ -6,7 +6,7 @@ The [`nsh-ext`](../..) WebView for Native Shell's **GPUI** backend, as a
 container.
 
 It implements the published `NativeComponent` contract of
-`nsh-platform-gpui =0.6.0` and builds its own native view with GPUI Fast's
+`nsh-platform-gpui =0.7.0` and builds its own native view with GPUI Fast's
 public window-composition API. It does not replace, patch or reuse the backend's
 own WebView, and it needs no fork of Native Shell.
 
@@ -21,7 +21,7 @@ graph, and its GTK 3 / WebKitGTK 4.1 dependencies, never mix with another
 adapter's. Linux needs an X11 (or Xwayland) window: WebKitGTK does not embed
 into Wayland surfaces.
 
-The manifest fixes GPUI Fast to NSH 0.6.0's published `0.1.16` baseline, the
+The manifest fixes GPUI Fast to NSH 0.7.0's published `0.1.19` baseline, the
 whole family exactly (`gpui-fast`, `gpui-fast-platform`, `gpui-fast-macros`).
 An application embedding the adapter resolves that same family, as it must with
 the backend itself: one GPUI per application, `cargo tree -i gpui-fast` showing
@@ -41,22 +41,21 @@ impl Component for App {
     type Event = NoEvent;
 
     fn view(_: (), _: Scope<NoEvent>) -> impl IntoElement {
-        nsh_ext::web_view()
-            .src("https://example.com/")
-            .on_load_progress(|progress| {
-                println!(
-                    "{} {:?} {:?}",
-                    progress.navigation, progress.state, progress.progress
-                );
+        nsh_core::element::desktop::window()
+            .id("main")
+            .title("My app")
+            .content(|| {
+                nsh_ext::web_view()
+                    .src("https://example.com/")
+                    .on_load_progress(|progress| {
+                        println!("{} {:?} {:?}", progress.navigation, progress.state, progress.progress);
+                    })
+                    .size_full()
             })
-            .size_full()
     }
 }
 
-let mut options = AppOptions::default();
-options.title = "My app".to_owned();
-let options = nsh_ext_gpui::install(options);
-run_app(AppSource::Rust(Root::of::<App>()), options);
+run_app(AppSource::Rust(Root::of::<App>()), nsh_ext_gpui::install(AppOptions::default()));
 ```
 
 `install` registers the component in `AppOptions::components`; register before
@@ -126,15 +125,16 @@ The header line reports the engine's own `loadProgress` as it arrives: the
 navigation identity, the state, the engine's estimate when it has one, and the
 engine's message for a failure.
 
-Native acceptance harness. It is a script over the public wire (a local page
-with a pending image replaced mid-load by a fast page, a streamed page to
-completion, a revisit of
-the fast page, a cleared `src`, a refused connection, the fast page again, then
-the web view removed from the tree and added again with a new source). It
-advances on native events, with a quiet interval after clearing/removal to
-detect stale callbacks. It asserts the `loadProgress` contract and **exits
-non-zero on any violation**; every started navigation ends exactly once, the
-run reports exactly one failure, and a replaced load is cancelled.
+The acceptance harness embeds an NSH `AppView` in a GPUI window. Its local
+server provides a pending page replaced mid-load by a fast page, a slow page
+streamed to completion, a revisit of the fast page, a refused connection after
+clearing `src`, and a view removed and added again. The script advances on
+native events, with a quiet interval after clearing or removal to detect stale
+callbacks. It asserts the `loadProgress` contract and **exits non-zero on any
+violation**; every started navigation ends exactly once, the run reports exactly
+one failure, and a replaced load is cancelled. On macOS and Windows, the harness
+drives GPUI drawing directly so a runner with no active display link can still
+exercise layout, placement, and real browser callbacks.
 
 ```sh
 cargo run --example acceptance
@@ -162,9 +162,8 @@ Platform prerequisites:
 
 ## Native child behaviour
 
-- The web view is built on the first frame after the `src` prop arrives and is
-  navigated once its native callbacks exist, so the first navigation cannot
-  outrun them.
+- GPUI's render pass builds the browser after `src` changes and installs its
+  native callbacks before starting the new navigation.
 - It is hidden until placed, then follows its container's bounds (GPUI points)
   and the window's scale factor; it is hidden when the container is not drawn,
   and dropped with the component (its native subscriptions removed first).
